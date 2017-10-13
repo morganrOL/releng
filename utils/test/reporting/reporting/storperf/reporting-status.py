@@ -41,7 +41,8 @@ for version in versions:
         scenario_results = rp_utils.getScenarios("storperf",
                                                  "snia_steady_state",
                                                  installer,
-                                                 version)
+                                                 version,
+                                                 "installer")
         # logger.info("scenario_results: %s" % scenario_results)
 
         scenario_stats = rp_utils.getScenarioStats(scenario_results)

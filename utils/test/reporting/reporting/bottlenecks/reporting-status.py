@@ -44,7 +44,7 @@ for version in VERSIONS:
         scenario_results = rp_utils.getScenarios("bottlenecks",
                                                  "posca_factor_ping",
                                                  installer,
-                                                 new_version)
+                                                 new_version, "installer")
         LOGGER.info("scenario_results: %s", scenario_results)
 
         scenario_stats = rp_utils.getScenarioStats(scenario_results)

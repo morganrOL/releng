@@ -39,10 +39,12 @@ cf = rp_utils.get_config('functest.test_conf')
 period = rp_utils.get_config('general.period')
 versions = rp_utils.get_config('general.versions')
 installers = rp_utils.get_config('general.installers')
+pods = rp_utils.get_config('general.pods')
 blacklist = rp_utils.get_config('functest.blacklist')
 log_level = rp_utils.get_config('general.log.log_level')
 exclude_noha = rp_utils.get_config('functest.exclude_noha')
 exclude_virtual = rp_utils.get_config('functest.exclude_virtual')
+vizu_mode = rp_utils.get_config('general.mode')
 
 functest_yaml_config = rp_utils.getFunctestConfig()
 
@@ -87,9 +89,16 @@ for tier in config_tiers:
 
 LOGGER.debug("Functest reporting start")
 
+LOGGER.debug("Visualization mode %s", vizu_mode)
+# 2 possible modules
+# installer or pods
+if "pod" in vizu_mode:
+    vizu_params = pods
+else:
+    vizu_params = installers
+
 # For all the versions
 for version in versions:
-    # For all the installers
     scenario_directory = "./display/" + version + "/functest/"
     scenario_file_name = scenario_directory + "scenario_history.txt"
 
@@ -104,13 +113,13 @@ for version in versions:
             LOGGER.debug("Create scenario file: %s", scenario_file_name)
             my_file.write("date,scenario,installer,detail,score\n")
 
-    for installer in installers:
+    for vizu_param in vizu_params:
 
-        # get scenarios
         scenario_results = rp_utils.getScenarios("functest",
                                                  "connection_check",
-                                                 installer,
-                                                 version)
+                                                 vizu_param,
+                                                 version, vizu_mode)
+
         # get nb of supported architecture (x86, aarch64)
         architectures = rp_utils.getArchitectures(scenario_results)
         LOGGER.info("Supported architectures: %s", architectures)
@@ -127,16 +136,17 @@ for version in versions:
 
             # in case of more than 1 architecture supported
             # precise the architecture
-            installer_display = installer
-            if "fuel" in installer:
-                installer_display = installer + "@" + architecture
+            installer_display = vizu_param
+            if "fuel" in vizu_param:
+                installer_display = vizu_param + "@" + architecture
+
+            LOGGER.info("!!! installer/pod_display = %s", installer_display)
 
             # For all the scenarios get results
             for s, s_result in filter_results.items():
                 LOGGER.info("---------------------------------")
-                LOGGER.info("installer %s, version %s, scenario %s:",
-                            installer, version, s)
-                LOGGER.debug("Scenario results: %s", s_result)
+                LOGGER.info("installer/pod %s, version %s, scenario %s:",
+                            vizu_param, version, s)
 
                 # Green or Red light for a given scenario
                 nb_test_runnable_for_this_scenario = 0
@@ -149,7 +159,7 @@ for version in versions:
                     LOGGER.debug("Build tag: %s", build_tag)
                     s_url = rp_utils.getJenkinsUrl(build_tag)
                     if s_url is None:
-                        s_url = "http://testresultS.opnfv.org/reporting"
+                        s_url = "http://testresults.opnfv.org/reporting"
                     LOGGER.info("last jenkins url: %s", s_url)
                 testCases2BeDisplayed = []
                 # Check if test case is runnable / installer, scenario
@@ -158,7 +168,7 @@ for version in versions:
                     # 1) Manage the test cases for the scenario validation
                     # concretely Tiers 0-3
                     for test_case in testValid:
-                        test_case.checkRunnable(installer, s,
+                        test_case.checkRunnable(vizu_param, s,
                                                 test_case.getConstraints())
                         LOGGER.debug("testcase %s (%s) is %s",
                                      test_case.getDisplayName(),
@@ -172,8 +182,9 @@ for version in versions:
                             nb_test_runnable_for_this_scenario += 1
                             LOGGER.info(" Searching results for case %s ",
                                         displayName)
-                            result = rp_utils.getResult(name, installer,
-                                                        s, version)
+                            result = rp_utils.getResult(name, vizu_param, s,
+                                                        version, vizu_mode)
+
                             # if no result set the value to 0
                             if result < 0:
                                 result = 0
@@ -191,7 +202,7 @@ for version in versions:
                     # 2) Manage the test cases for the scenario qualification
                     # concretely Tiers > 3
                     for test_case in otherTestCases:
-                        test_case.checkRunnable(installer, s,
+                        test_case.checkRunnable(vizu_param, s,
                                                 test_case.getConstraints())
                         LOGGER.debug("testcase %s (%s) is %s",
                                      test_case.getDisplayName(),
@@ -204,8 +215,9 @@ for version in versions:
                             project = test_case.getProject()
                             LOGGER.info(" Searching results for case %s ",
                                         displayName)
-                            result = rp_utils.getResult(name, installer,
-                                                        s, version)
+                            result = rp_utils.getResult(name, vizu_param, s,
+                                                        version,
+                                                        vizu_mode)
                             # at least 1 result for the test
                             if result > -1:
                                 test_case.setCriteria(result)
@@ -223,7 +235,7 @@ for version in versions:
                         items[s] = testCases2BeDisplayed
                 except Exception:  # pylint: disable=broad-except
                     LOGGER.error("Error installer %s, version %s, scenario %s",
-                                 installer, version, s)
+                                 vizu_param, version, s)
                     LOGGER.error("No data available: %s", sys.exc_info()[0])
 
                 # **********************************************

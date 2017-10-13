@@ -37,7 +37,7 @@ for version in versions:
         scenario_results = rp_utils.getScenarios("vsperf",
                                                  None,
                                                  installer,
-                                                 None)
+                                                 None, "installer")
         items = {}
         scenario_result_criteria = {}
         logger.info("installer %s, version %s, scenario ", installer, version)

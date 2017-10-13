@@ -78,7 +78,7 @@ def getLogger(module):
 #               REPORTING UTILS
 #
 # -----------------------------------------------------------
-def getApiResults(case, installer, scenario, version):
+def getApiResults(case, param, scenario, version, mode):
     """
     Get Results by calling the API
     """
@@ -94,9 +94,13 @@ def getApiResults(case, installer, scenario, version):
     nb_tests = get_config('general.nb_iteration_tests_success_criteria')
 
     url = ("http://" + url_base + "?case=" + case +
-           "&period=" + str(period) + "&installer=" + installer +
-           "&scenario=" + scenario + "&version=" + version +
-           "&last=" + str(nb_tests))
+           "&period=" + str(period) + "&version=" + version +
+           "&scenario=" + scenario + "&last=" + str(nb_tests))
+    if "installer" in mode:
+        url += "&installer=" + param
+    else:
+        url += "&pod=" + param
+
     request = Request(url)
 
     try:
@@ -109,7 +113,7 @@ def getApiResults(case, installer, scenario, version):
     return results
 
 
-def getScenarios(project, case, installer, version):
+def getScenarios(project, case, param, version, mode):
     """
     Get the list of Scenarios
     """
@@ -118,11 +122,15 @@ def getScenarios(project, case, installer, version):
     url_base = get_config('testapi.url')
 
     url = ("http://" + url_base +
-           "?installer=" + installer +
-           "&period=" + str(period))
+           "?period=" + str(period))
 
     if version is not None:
         url += "&version=" + version
+
+    if "installer" in mode:
+        url += "&installer=" + param
+    else:
+        url += "&pod_name=" + param
 
     if project is not None:
         url += "&project=" + project
@@ -285,12 +293,12 @@ def getNbtestOk(results):
     return nb_test_ok
 
 
-def getResult(testCase, installer, scenario, version):
+def getResult(testCase, param, scenario, version, mode):
     """
     Get Result  for a given Functest Testcase
     """
     # retrieve raw results
-    results = getApiResults(testCase, installer, scenario, version)
+    results = getApiResults(testCase, param, scenario, version, mode)
     # let's concentrate on test results only
     test_results = results['results']
 

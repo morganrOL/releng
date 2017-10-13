@@ -12,10 +12,18 @@ general:
         - euphrates
         - danube
 
+    pods:
+        - lf-pod1
+        - lf-pod2
+        - huawei-pod1
+        - orange-pod2
+
     log:
         log_file: reporting.log
         log_level: ERROR
 
+    mode: pod # installer
+      
     period: 10
 
     nb_iteration_tests_success_criteria: 4
